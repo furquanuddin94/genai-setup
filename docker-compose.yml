@@ -1,0 +1,39 @@
+version: '3.8'
+
+services:
+
+  ollama:
+    image: ollama-custom-image:latest  # Use your custom image
+    container_name: ollama
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - capabilities: [gpu]  # Enable GPU support
+    environment:
+      - NVIDIA_VISIBLE_DEVICES=all
+      - NVIDIA_DRIVER_CAPABILITIES=compute,utility
+    runtime: nvidia
+    volumes:
+      - ollama_data:/root/.ollama  # Persistent volume for Ollama model data
+    ports:
+      - "11434:11434"  # Expose the port for Ollama API
+
+  open-webui:
+    image: ghcr.io/open-webui/open-webui:ollama
+    container_name: open-webui
+    depends_on:
+      - ollama  # Ensure Ollama service starts before WebUI
+    ports:
+      - "3000:8080"  # Expose Open WebUI on port 3000
+    volumes:
+      - webui_data:/app/backend/data  # Persistent volume for WebUI data
+    environment:
+      - NVIDIA_VISIBLE_DEVICES=all
+      - NVIDIA_DRIVER_CAPABILITIES=compute,utility
+      - OLLAMA_BASE_URL=http://ollama-deepseek:11434  # Connect to Ollama API
+    runtime: nvidia
+
+volumes:
+  ollama_data:  # Volume to store Ollama data persistently
+  webui_data:  # Volume to store WebUI data persistently
